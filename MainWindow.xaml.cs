@@ -42,7 +42,7 @@ namespace VideoPlayer
             await MediaPrimary.Open(path);
 
 
-            string pw = @"C:\Repozitories\video.mp4";
+            string pw = @"C:\Repozitories\video.mp4" ;
 
             Uri pathw = new Uri(pw);
 
