@@ -8,7 +8,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Videos\Thor.mp4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Videos\Thor.mp4">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FFME.Windows" Version="4.4.350" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SeekIndexes\" />
   </ItemGroup>
 
 </Project>
