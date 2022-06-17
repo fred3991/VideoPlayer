@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         Title="MainWindow" Height="650" Width="1000" Loaded="Window_Loaded" >
-    <Grid>
+    <Grid x:Name="MainGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition></ColumnDefinition>
@@ -38,7 +38,23 @@
 
         </Grid.RowDefinitions>
 
-        <ffme:MediaElement x:Name="MediaPrimary" Background="Gray" LoadedBehavior="Play" UnloadedBehavior="Manual" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="4"/>
+
+     
+        
+        <StackPanel x:Name="StackMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="4" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Black"
+                    
+                    Margin="5"
+                    
+                    
+                    >
+         
+
+            <ffme:MediaElement x:Name="MediaPrimary" Background="Black" LoadedBehavior="Play" UnloadedBehavior="Manual"  />
+
+        </StackPanel>
+        
+   
+        
 
         <ffme:MediaElement x:Name="MediaSecondary" Background="Gray" LoadedBehavior="Play" UnloadedBehavior="Manual" Grid.Column="5" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="4"/>
 
@@ -108,7 +124,7 @@
 
         <TextBlock Grid.Column="0" Grid.Row="9" Text="Scale" HorizontalAlignment="Center"></TextBlock>
 
-        <Slider  Minimum="-10" Maximum="10" TickFrequency="0.1" Value="0" x:Name="PrimaryScale"  VerticalContentAlignment="Center"
+        <Slider  Minimum="0.1" Maximum="5" TickFrequency="0.1" Value="1" x:Name="PrimaryScale"  VerticalContentAlignment="Center"
                  HorizontalContentAlignment="Center" VerticalAlignment="Center"
                  Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="3" 
                  

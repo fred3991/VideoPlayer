@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -38,24 +39,16 @@ namespace VideoPlayer
         bool IsMutedPrimary;
         bool IsMutedSecondary;
 
-
-        public string VideoFilter = "scale=-1:5080,eq=contrast=+1.300:brightness=+0.200:saturation=+1.000";
         public MediaOptions CurrentMediaOptions { get; set; }
         public RendererOptions RendererOptions { get; set; }
 
 
-        private void SpeepUpPrimary_Click(object sender, RoutedEventArgs e)
-        {
-            var st = "eq=contrast=+1,300:brightness=+0,250:saturation=+1,000";
-            var s = MediaPrimary.SpeedRatio;
-
-            MediaPrimary.SpeedRatio = MediaPrimary.SpeedRatio * 1.1;
-        }
+      
 
         public MainWindow()
         {
 
-            Unosquare.FFME.Library.FFmpegDirectory = @"C:\ffmpeg\x64";
+            Unosquare.FFME.Library.FFmpegDirectory = Directory.GetCurrentDirectory() +  @"\Library\ffmpeg\";
             MediaPrimary = new Unosquare.FFME.MediaElement();
             MediaSecondary = new Unosquare.FFME.MediaElement();
 
@@ -471,17 +464,118 @@ namespace VideoPlayer
 
         private void ScalePrimary_Click(object sender, RoutedEventArgs e)
         {
+            var scale = PrimaryScale.Value;
+
+            var m = MediaPrimary;
+            if (m == null) return;
+
+            var transform = m.RenderTransform as ScaleTransform;
+            if (transform == null)
+            {
+                transform = new ScaleTransform(1, 1);
+                m.RenderTransformOrigin = new Point(0.5, 0.5);
+                m.RenderTransform = transform;
+            }
+
+            //if (transform.ScaleX < 0.1d || transform.ScaleY < 0.1)
+            //{
+            //    transform.ScaleX = 0.1d;
+            //    transform.ScaleY = 0.1d;
+            //}
+            //else if (transform.ScaleX > 5d || transform.ScaleY > 5)
+            //{
+            //    transform.ScaleX = 5;
+            //    transform.ScaleY = 5;
+            //}
+
+            transform.ScaleX = scale;
+            transform.ScaleY = scale;
+
+           
+            transform = new ScaleTransform(scale, scale);
+            transform.CenterX = m.TransformToAncestor(StackMain).Transform(new Point(0,0)).X;
+            transform.CenterY = m.TransformToAncestor(StackMain).Transform(new Point(0,0)).Y;
+            GeneralTransform generalTransform = StackMain.TransformToDescendant(m);
+            Point currentPoint = generalTransform.Transform(new Point(0, 0));
+            //m.RenderTransformOrigin = new Point(scale, scale);
+            //m.RenderTransform = transform;
+
+
 
         }
 
         private void SlowDownPrimary_Click(object sender, RoutedEventArgs e)
         {
+            MediaPrimary.SpeedRatio = MediaPrimary.SpeedRatio * 0.9;
+        }
+
+        private void SpeepUpPrimary_Click(object sender, RoutedEventArgs e)
+        {         
+            MediaPrimary.SpeedRatio = MediaPrimary.SpeedRatio * 1.1;
+        }
+
+        private async void ScreenShot_Click(object sender, RoutedEventArgs e)
+        {
+            //// Obtain the bitmap
+            //var bmp = await MediaPrimary.CaptureBitmapAsync().GetAwaiter().GetResult();
+
+            //var scrDir = Directory.GetCurrentDirectory() + @"\Screenshots";
+
+            //// prevent firther processing if we did not get a bitmap.
+            //bmp?.Save(scrDir + @"\" + DateTime.Now.ToString("hh-mm-ss") + ".png");
+
+            var captureTask = Task.Run(() =>
+            {
+                try
+                {
+                    // Obtain the bitmap
+                    var bmp = MediaPrimary.CaptureBitmapAsync().GetAwaiter().GetResult();
+
+                    // prevent firther processing if we did not get a bitmap.
+                    bmp?.Save(GetCaptureFilePath("Screenshot", "png"), ImageFormat.Png);
+                    //ViewModel.NotificationMessage = "Captured screenshot.";
+                }
+                catch (Exception ex)
+                {
+                    var messageTask = Dispatcher.InvokeAsync(() =>
+                    {
+                        MessageBox.Show(
+                            this,
+                            $"Capturing Video Frame Failed: {ex.GetType()}\r\n{ex.Message}",
+                            $"{nameof(Unosquare.FFME.MediaElement)} Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error,
+                            MessageBoxResult.OK);
+                    });
+                }
+                finally
+                {
+                    // unlock for further captures.
+                   // IsCaptureInProgress = false;
+                }
+            });
+
 
         }
 
-        private void ScreenShot_Click(object sender, RoutedEventArgs e)
+        public static string GetCaptureFilePath(string mediaPrefix, string extension)
         {
+            var date = DateTime.UtcNow;
+            var dateString = $"{date.Year:0000}-{date.Month:00}-{date.Day:00} {date.Hour:00}-{date.Minute:00}-{date.Second:00}.{date.Millisecond:000}";
+            //var targetFolder = Path.Combine(
+            //    Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            //    "ffmeplay");
 
+            var targetFolder = Directory.GetCurrentDirectory() + @"\Screenshots";
+
+            if (Directory.Exists(targetFolder) == false)
+                Directory.CreateDirectory(targetFolder);
+
+            var targetFilePath = Path.Combine(targetFolder, $"{mediaPrefix} {dateString}.{extension}");
+            if (File.Exists(targetFilePath))
+                File.Delete(targetFilePath);
+
+            return targetFilePath;
         }
     }
 }
