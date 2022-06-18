@@ -49,7 +49,7 @@ namespace VideoPlayer
         {
 
             Unosquare.FFME.Library.FFmpegDirectory = Directory.GetCurrentDirectory() +  @"\Library\ffmpeg\";
-            MediaPrimary = new Unosquare.FFME.MediaElement();
+            MediaPrimary = new Unosquare.FFME.MediaElement() ;
             MediaSecondary = new Unosquare.FFME.MediaElement();
 
             InitializeComponent();
