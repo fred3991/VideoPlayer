@@ -19,7 +19,6 @@
     <None Remove="Library\ffmpeg\postproc-55.dll" />
     <None Remove="Library\ffmpeg\swresample-3.dll" />
     <None Remove="Library\ffmpeg\swscale-5.dll" />
-    <None Remove="Videos\Thor.mp4" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,9 +53,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Library\ffmpeg\swscale-5.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Videos\Thor.mp4">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
