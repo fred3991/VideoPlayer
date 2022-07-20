@@ -6,7 +6,9 @@ using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -43,13 +45,13 @@ namespace VideoPlayer
         public RendererOptions RendererOptions { get; set; }
 
 
-      
+
 
         public MainWindow()
         {
 
-            Unosquare.FFME.Library.FFmpegDirectory = Directory.GetCurrentDirectory() +  @"\Library\ffmpeg\";
-            MediaPrimary = new Unosquare.FFME.MediaElement() ;
+            Unosquare.FFME.Library.FFmpegDirectory = Directory.GetCurrentDirectory() + @"\Library\ffmpeg\";
+            MediaPrimary = new Unosquare.FFME.MediaElement();
             MediaSecondary = new Unosquare.FFME.MediaElement();
 
             InitializeComponent();
@@ -101,19 +103,36 @@ namespace VideoPlayer
             }
         }
 
-      
 
-        private void PlayPrimary_ClickAsync(object sender, RoutedEventArgs e)
+
+        private async void PlayPrimary_ClickAsync(object sender, RoutedEventArgs e)
         {
+
+
+
             Uri path = new Uri(VideoFilePrimary);
 
             MediaPrimary.MediaOpening += OnMediaOpening;
             MediaPrimary.MediaClosed -= OnMediaClosed;
 
-            MediaPrimary.Open(path);
+            //MediaPrimary.Open(path);
 
+            var target = new Uri(VideoFilePrimary);
+            //if (target.ToString().StartsWith(FileInputStream.Scheme, StringComparison.OrdinalIgnoreCase))
+            await MediaPrimary.Open(new FileInputStream(target.LocalPath));
+
+
+            MediaPrimary.LoopingBehavior = MediaPlaybackState.Play;
             IsPausedPrimary = false;
             IsMutedPrimary = false;
+
+
+            CurrentMediaOptions.VideoBlockCache = 100000;
+            CurrentMediaOptions.MinimumPlaybackBufferPercent = 1.0;
+            CurrentMediaOptions.UseParallelRendering = true;
+            CurrentMediaOptions.UseParallelDecoding = true;
+
+            var a = CurrentMediaOptions.VideoHardwareDevice;
         }
 
         private async void PausePrimary_Click(object sender, RoutedEventArgs e)
@@ -124,7 +143,7 @@ namespace VideoPlayer
                 IsPausedPrimary = false;
                 return;
             }
-            if(!IsPausedPrimary)
+            if (!IsPausedPrimary)
             {
                 await MediaPrimary.Pause();
                 IsPausedPrimary = true;
@@ -136,7 +155,7 @@ namespace VideoPlayer
         {
             MediaPrimary.Stop();
             MediaPrimary.Close();
-            
+
         }
         private readonly object RecorderSyncLock = new object();
         private void OnMediaClosed(object sender, EventArgs e)
@@ -215,12 +234,12 @@ namespace VideoPlayer
                 return;
             }
 
-            
+
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-          
+
         }
 
         private async void OnMediaOpening(object sender, MediaOpeningEventArgs e)
@@ -228,6 +247,7 @@ namespace VideoPlayer
             // Capture a reference to the MediaOptions object for real-time change
             // This usage of MediaOptions is unsupported.
             CurrentMediaOptions = e.Options;
+
 
             // the event sender is the MediaElement itself
             var media = sender as Unosquare.FFME.MediaElement;
@@ -309,6 +329,7 @@ namespace VideoPlayer
                 // e.Options.DecoderCodec[videoStream.StreamIndex] = "mjpeg";
 
                 // If we have a valid seek index let's use it!
+                mediaFilePath = "C:\\Users\\Viva_\\Desktop\\2022-07-20 17-09-39Z_ef8a55_.mp4";
                 if (string.IsNullOrWhiteSpace(mediaFilePath) == false)
                 {
                     try
@@ -395,7 +416,7 @@ namespace VideoPlayer
         private VideoSeekIndex LoadOrCreateVideoSeekIndex(string mediaFilePath, int streamIndex, double durationSeconds)
         {
             var seekFileName = $"{Path.GetFileNameWithoutExtension(mediaFilePath)}.six";
-            var sindx = Directory.GetCurrentDirectory()+ @"\SeekIndexes";
+            var sindx = Directory.GetCurrentDirectory() + @"\SeekIndexes";
             var seekFilePath = Path.Combine(sindx, seekFileName);
 
             if (!Directory.Exists(sindx))
@@ -433,9 +454,12 @@ namespace VideoPlayer
             public double Saturation;
         }
 
+        // https://unix.stackexchange.com/questions/233832/merge-two-video-clips-into-one-placing-them-next-to-each-other
+        // https://video.stackexchange.com/questions/20962/ffmpeg-color-correction-gamma-brightness-and-saturation
+
         private void FilterPrimary_Click(object sender, RoutedEventArgs e)
         {
-            
+
             var currentValues = new EqualizerFilterValues { Contrast = 1d, Brightness = 0d, Saturation = 1d };
 
             double? saturation = PrimarySaturation.Value;
@@ -491,10 +515,10 @@ namespace VideoPlayer
             transform.ScaleX = scale;
             transform.ScaleY = scale;
 
-           
+
             transform = new ScaleTransform(scale, scale);
-            transform.CenterX = m.TransformToAncestor(StackMain).Transform(new Point(0,0)).X;
-            transform.CenterY = m.TransformToAncestor(StackMain).Transform(new Point(0,0)).Y;
+            transform.CenterX = m.TransformToAncestor(StackMain).Transform(new Point(0, 0)).X;
+            transform.CenterY = m.TransformToAncestor(StackMain).Transform(new Point(0, 0)).Y;
             GeneralTransform generalTransform = StackMain.TransformToDescendant(m);
             Point currentPoint = generalTransform.Transform(new Point(0, 0));
             //m.RenderTransformOrigin = new Point(scale, scale);
@@ -510,7 +534,7 @@ namespace VideoPlayer
         }
 
         private void SpeepUpPrimary_Click(object sender, RoutedEventArgs e)
-        {         
+        {
             MediaPrimary.SpeedRatio = MediaPrimary.SpeedRatio * 1.1;
         }
 
@@ -551,7 +575,7 @@ namespace VideoPlayer
                 finally
                 {
                     // unlock for further captures.
-                   // IsCaptureInProgress = false;
+                    // IsCaptureInProgress = false;
                 }
             });
 
@@ -576,6 +600,213 @@ namespace VideoPlayer
                 File.Delete(targetFilePath);
 
             return targetFilePath;
+        }
+
+        // Таймер для запуска показа изображений как видео
+        public Timer ImageVideoTimer;
+        public double FPS { get; set; }
+        public TimeSpan SeekingTimeSpan { get; set; }
+        public TimeSpan TotalDuration { get; set; }
+        public TimeSpan ActualPosition { get; set; }
+        public TimeSpan FrameDuration { get; set; }
+
+
+        public TimeSpan StartTime = new TimeSpan(0, 0, 0, 0, 0);
+        public TimeSpan EndTime { get; set; }
+
+        public TimeSpan PredFrame { get; set; }
+
+        private async void RunBoth_Click(object sender, RoutedEventArgs e)
+        {
+            //ImageVideoTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            PredFrame = new TimeSpan();
+            FPS = MediaPrimary.VideoFrameRate;
+            MediaPrimary.ScrubbingEnabled = false;
+            ActualPosition = (TimeSpan)MediaPrimary.ActualPosition;
+
+            TotalDuration = (TimeSpan)MediaPrimary.NaturalDuration;
+            EndTime = (TimeSpan)MediaPrimary.NaturalDuration;
+
+            FrameDuration = TotalDuration / FPS;
+            //var FramePerMs = 
+            //FrameDuration = MediaPrimary
+
+            // go to end
+            MediaPrimary.Seek((TimeSpan)MediaPrimary.PlaybackStartTime);
+
+            // Thread.Sleep(500);
+            object objxr = 0;
+            TimerCallback xrtm = new TimerCallback(ReverseVideoPlayback);
+
+            PredFrame = TotalDuration - FrameDuration;
+
+            var MSecPerFrame = Convert.ToInt32((1.0 / FPS) * 1000);
+            //RecordedImagesCount = FPS * RecordTime;
+
+            ImageVideoTimer = new Timer(xrtm, objxr, 0, (int)((int)MSecPerFrame * 1000));
+
+            //MediaPrimary.Seek(new TimeSpan(0, 0, 0, 30, 0));
+        }
+
+        public void ReverseVideoPlayback(object obj)
+        {
+            int x = (int)obj;
+
+            //PredFrame = PredFrame - FrameDuration;
+
+            // Thread.Sleep(500);
+            MediaPrimary.StepForward();
+            if (ActualPosition <= new TimeSpan(0, 0, 0, 1, 0))
+            {
+                ImageVideoTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                MediaPrimary.Stop();
+                MediaPrimary.Play();
+            }
+
+        }
+
+
+        int tie = 100;
+        private void StopTimer_Click(object sender, RoutedEventArgs e)
+        {
+
+
+
+            MediaPrimary.ScrubbingEnabled = false;
+            MediaPrimary.Position = new TimeSpan(0, 0, 0, tie, 0);
+            tie = tie - 1;
+        }
+
+        private async void NextFrame_Click(object sender, RoutedEventArgs e)
+        {
+            TotalDuration = (TimeSpan)MediaPrimary.NaturalDuration;
+            FPS = MediaPrimary.VideoFrameRate;
+            ActualPosition = (TimeSpan)MediaPrimary.ActualPosition;
+            FrameDuration = TotalDuration / FPS;
+
+            var nextFrameTime = ActualPosition + FrameDuration / FPS;
+            //MediaPrimary.Pause();
+            MediaPrimary.StepForward();
+            //MediaPrimary.Play();
+            //MediaPrimary.Pause();
+        }
+
+        private async void BackFrame_Click(object sender, RoutedEventArgs e)
+        {
+            TotalDuration = (TimeSpan)MediaPrimary.NaturalDuration;
+            FPS = MediaPrimary.VideoFrameRate;
+            ActualPosition = (TimeSpan)MediaPrimary.ActualPosition;
+            FrameDuration = TotalDuration / FPS;
+
+            var info = MediaPrimary.MediaInfo.Duration;
+
+            var backFrameTime = ActualPosition - FrameDuration / FPS;
+
+            await MediaPrimary.StepBackward();
+
+            ActualPosition = (TimeSpan)MediaPrimary.ActualPosition;
+        }
+
+        //System.Windows.Threading.DispatcherTimer dispatcherTimer;
+        //int t = 240000; // 4 minutes = 240,000 milliseconds
+        //private void dispatcherTimer_Tick(object sender, EventArgs e)
+        //{
+        //    // Go back 1 frame every 42 milliseconds (or 24 fps)
+        //    t = t - 33;
+        //    MediaPrimary.Position = TimeSpan.FromMilliseconds(t);
+        //}
+
+    }
+    public sealed unsafe class FileInputStream : IMediaInputStream
+    {
+        private readonly FileStream BackingStream;
+        private readonly object ReadLock = new object();
+        private readonly byte[] ReadBuffer;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileInputStream"/> class.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        public FileInputStream(string path)
+        {
+            var fullPath = Path.GetFullPath(path);
+            BackingStream = File.OpenRead(fullPath);
+            var uri = new Uri(fullPath);
+            StreamUri = new Uri(uri.ToString().ReplaceOrdinal("file://", Scheme));
+            CanSeek = true;
+            ReadBuffer = new byte[ReadBufferLength];
+        }
+
+        /// <summary>
+        /// The custom file scheme (URL prefix) including the :// sequence.
+        /// </summary>
+        public static string Scheme => "customfile://";
+
+        /// <inheritdoc />
+        public Uri StreamUri { get; }
+
+        /// <inheritdoc />
+        public bool CanSeek { get; }
+
+        /// <inheritdoc />
+        public int ReadBufferLength => 1024 * 16;
+
+        /// <inheritdoc />
+        public InputStreamInitializing OnInitializing { get; }
+
+        /// <inheritdoc />
+        public InputStreamInitialized OnInitialized { get; }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            BackingStream?.Dispose();
+        }
+
+        /// <summary>
+        /// Reads from the underlying stream and writes up to <paramref name="targetBufferLength" /> bytes
+        /// to the <paramref name="targetBuffer" />. Returns the number of bytes that were written.
+        /// </summary>
+        /// <param name="opaque">The opaque.</param>
+        /// <param name="targetBuffer">The target buffer.</param>
+        /// <param name="targetBufferLength">Length of the target buffer.</param>
+        /// <returns>
+        /// The number of bytes that have been read.
+        /// </returns>
+        public int Read(void* opaque, byte* targetBuffer, int targetBufferLength)
+        {
+            lock (ReadLock)
+            {
+                try
+                {
+                    var readCount = BackingStream.Read(ReadBuffer, 0, ReadBuffer.Length);
+                    if (readCount > 0)
+                        Marshal.Copy(ReadBuffer, 0, (IntPtr)targetBuffer, readCount);
+
+                    return readCount;
+                }
+                catch (Exception)
+                {
+                    return ffmpeg.AVERROR_EOF;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public long Seek(void* opaque, long offset, int whence)
+        {
+            lock (ReadLock)
+            {
+                try
+                {
+                    return whence == ffmpeg.AVSEEK_SIZE ?
+                        BackingStream.Length : BackingStream.Seek(offset, SeekOrigin.Begin);
+                }
+                catch
+                {
+                    return ffmpeg.AVERROR_EOF;
+                }
+            }
         }
     }
 }

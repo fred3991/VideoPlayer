@@ -39,22 +39,22 @@
         </Grid.RowDefinitions>
 
 
-     
-        
+
+
         <StackPanel x:Name="StackMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="4" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Black"
                     
                     Margin="5"
                     
                     
                     >
-         
+
 
             <ffme:MediaElement x:Name="MediaPrimary" Background="Black" LoadedBehavior="Play" UnloadedBehavior="Manual"  />
 
         </StackPanel>
-        
-   
-        
+
+
+
 
         <ffme:MediaElement x:Name="MediaSecondary" Background="Gray" LoadedBehavior="Play" UnloadedBehavior="Manual" Grid.Column="5" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="4"/>
 
@@ -71,8 +71,8 @@
         <Button x:Name="StopPrimary"  Grid.Column="2" Grid.Row="2"  Content="Stop" Click="StopPrimary_Click"></Button>
         <Button x:Name="MutePrimary"  Grid.Column="3" Grid.Row="2"  Content="Mute" Click="MutePrimary_Click" ></Button>
 
-      
-        
+
+
 
         <Button x:Name="PlaySecondary"  Grid.Column="5" Grid.Row="2"  Content="Play" Click="PlaySecondary_Click" ></Button>
         <Button x:Name="PauseSecondary"  Grid.Column="6" Grid.Row="2"  Content="Pause" Click="PauseSecondary_Click" ></Button>
@@ -114,7 +114,7 @@
         </Slider>
 
         <TextBlock Grid.Column="0" Grid.Row="7" Text="Saturation" HorizontalAlignment="Center"></TextBlock>
-        
+
         <Slider   VerticalContentAlignment="Center" HorizontalContentAlignment="Center" VerticalAlignment="Center"
             Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3"          
             Minimum="0" Maximum="3" TickFrequency="0.1" Value="1.5" x:Name="PrimarySaturation" 
@@ -135,6 +135,17 @@
 
 
 
+
+        <Button x:Name="RunBoth" Grid.Column="6" Grid.Row="10" Grid.ColumnSpan="3" Content="RunBoth" Click="RunBoth_Click"></Button>
+
+        <Button x:Name="StopTimer" Grid.Column="6" Grid.Row="9" Grid.ColumnSpan="3" Content="Stop" Click="StopTimer_Click" ></Button>
+
+
+        <Button x:Name="NextFrame" Grid.Column="6" Grid.Row="6" Content="Next" Click="NextFrame_Click" ></Button>
+
+
+        <TextBox Grid.Column="7" Grid.Row="7" Text="5" x:Name="time"></TextBox>
+        <Button x:Name="BackFrame" Grid.Column="7" Grid.Row="6" Content="Back" Click="BackFrame_Click" ></Button>
 
 
 

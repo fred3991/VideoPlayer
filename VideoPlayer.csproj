@@ -5,7 +5,19 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Screenshots\**" />
+    <Compile Remove="SeekIndexes\**" />
+    <EmbeddedResource Remove="Screenshots\**" />
+    <EmbeddedResource Remove="SeekIndexes\**" />
+    <None Remove="Screenshots\**" />
+    <None Remove="SeekIndexes\**" />
+    <Page Remove="Screenshots\**" />
+    <Page Remove="SeekIndexes\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="Library\ffmpeg\avcodec-58.dll" />
@@ -59,11 +71,6 @@
 
   <ItemGroup>
     <PackageReference Include="FFME.Windows" Version="4.4.350" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Screenshots\" />
-    <Folder Include="SeekIndexes\" />
   </ItemGroup>
 
 </Project>
